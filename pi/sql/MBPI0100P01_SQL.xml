@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace='com.pentas.mb.pi.MBPI0100P01'>
+	
+	<select id='selectWithdrawalCode' parameterType="pentasMap" resultType="pentasMap">
+		select SUB_CAT_CD, SUB_CAT_DESC
+		from pscc0002
+		where MAIN_CAT_ID = 'CCD-1700'
+		order by ORD_NO
+	</select>
+	
+	<select id='selectCurrentPassword' parameterType="pentasMap" resultType="pentasMap">
+		select LOGIN_PW
+		from psmb0001
+		where MBR_ID = #{MBR_ID};
+	</select>
+	
+	<update id='updateMemberQuit' parameterType="pentasMap">
+		update psmb0001
+		set MBR_STTUS_CD = 'QUIT'
+		, UPD_DTM = TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+		, UPD_ID = #{MBR_ID} 
+		where MBR_ID = #{MBR_ID}
+	</update>
+	
+	<insert id='insertReasonWithdrawal' parameterType="pentasMap">
+		insert into pswm0001
+		(
+			MBR_ID
+			,WDRL_RSN_CD
+			,WDRL_ETC_RSN
+			,WDRL_DTM
+			,REG_DTM
+			,REG_ID
+			,UPD_DTM
+			,UPD_ID
+		) values
+		(
+			#{MBR_ID}
+			,#{reason}
+			,#{etcText}
+			,TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+			,TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+			,#{MBR_ID}
+			,TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+			,#{MBR_ID}
+		)
+	</insert>
+</mapper>

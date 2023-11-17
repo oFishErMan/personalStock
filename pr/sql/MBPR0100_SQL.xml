@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace='com.pentas.mb.pr.MBPR0100'>
+
+	<update id='updatePassword' parameterType="pentasMap">
+	/* mb.pr.updatePassword */
+		update psmb0001 set 
+		LOGIN_PW = #{LOGIN_PW}
+		, UPD_DTM = TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+		, UPD_ID = 'SYSTEM' 
+		where EMAIL = #{email};
+	</update>
+  
+  	<select id="selectUserNick" resultType="pentasMap" parameterType="pentasMap">
+  	/* mb.pr.selectUserNick */
+  		select NICKNM
+  		from psmb0001
+  		where EMAIL = #{email};
+  	</select>
+  	
+  	<select id='selectEmailCertificationNumber' parameterType="pentasMap" resultType="pentasMap">
+  	/* mb.pr.selectEmailCertificationNumber */
+		select IF(a.EMAIL_CRT_NO = #{EMAIL_CRT_NO},1,0) as result
+		from (
+			select EMAIL_CRT_NO
+			from psec0001
+			where EMAIL = #{email}
+			order by upd_dtm desc
+			limit 0, 1) a
+	</select>
+  	
+  	<insert id="insertEmailInfomation" parameterType="pentasMap">
+  	/* mb.pr.insertEmailInfomation */
+  		insert into psec0001 values (
+	  		#{emailCrtNo}
+	  		,#{email}
+	  		,#{emailCrtDue}
+	  		,date_format(now(),'%Y%m%d%H%i%s')
+	  		,'SYSTEM'
+	  		,date_format(now(),'%Y%m%d%H%i%s')
+	  		,'SYSTEM'
+  		)
+  	</insert>
+  	
+</mapper>

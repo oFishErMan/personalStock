@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace='com.pentas.mb.pi.MBPI0100'>
+	
+	<select id="selectUserInformation" parameterType="pentasMap" resultType="pentasMap">
+	/* mb.pi.selectUserInformation */
+		SELECT
+			EMAIL
+			,NICKNM
+			,MBR_GNDR
+			,MBR_BDAY
+			,SNS_TYP
+			,NICKNM_UPD_DTM
+			,PF_IMG
+			,DEF_IMG
+		FROM
+			PSMB0001
+		WHERE mbr_id = #{MBR_ID}		
+	</select>
+
+	<select id='selectEmailCheckDuplicate' parameterType="pentasMap" resultType="pentasMap">
+	/* mb.pi.selectEmailCheckDuplicate */
+		select count(*) as result
+		from psmb0001
+		where EMAIL = #{email};
+	</select>
+	
+	<select id='selectNickCheckDuplicate' parameterType="pentasMap" resultType="pentasMap">
+	/* mb.pi.selectNickCheckDuplicate */
+		select count(*) as result
+		from psmb0001
+		where NICKNM = #{NICKNM};
+	</select>
+
+	<select id='selectEmailCertificationNumber' parameterType="pentasMap" resultType="pentasMap">
+	/* mb.pi.selectEmailCertificationNumber */
+		select IF(a.EMAIL_CRT_NO = #{EMAIL_CRT_NO},1,0) as result
+		from (
+			select EMAIL_CRT_NO
+			from psec0001
+			where EMAIL = #{EMAIL}
+			order by upd_dtm desc
+			limit 0, 1) a
+	</select>
+	
+	<update id="updateUserAccount" parameterType="pentasMap">
+	/* mb.pi.updateUserAccount */
+		update psmb0001
+		set 
+		EMAIL = #{EMAIL}
+		,NICKNM = #{NICKNM}
+		,NICKNM_UPD_DTM =  #{NICKNM_UPD_DTM}
+		,MBR_GNDR = #{MBR_GNDR}
+		,MBR_BDAY = #{MBR_BDAY}
+		,DEF_IMG = #{DEF_IMG}
+		,PF_IMG = #{PF_IMG}
+		where MBR_ID = #{MBR_ID}
+	</update>
+	
+	<insert id="insertEmailInfomation" parameterType="pentasMap">
+	/* mb.pi.insertEmailInfomation */
+  		insert into psec0001 values (
+  		#{emailCrtNo}
+  		,#{email}
+  		,#{emailCrtDue}
+  		,date_format(now(),'%Y%m%d%H%i%s')
+  		,'SYSTEM'
+  		,date_format(now(),'%Y%m%d%H%i%s')
+  		,'SYSTEM'
+  		)
+  	</insert>
+  	
+  	<update id="updateUserSocialInfo" parameterType="pentasMap">
+	/* mb.pi.updateUserSocialInfo */
+		update psmb0001
+		set 
+		SNS_ID = #{SNS_ID}
+		,SNS_TYP = #{SNS_TYP}
+		,SNS_DTM = date_format(now(),'%Y%m%d%H%i%s')
+		where MBR_ID = #{MBR_ID}
+	</update>
+	
+	<update id="updateUserSocialReset" parameterType="pentasMap">
+	/* mb.pi.updateUserSocialInfo */
+		update psmb0001
+		set 
+		SNS_ID = null
+		,SNS_TYP = null
+		,SNS_DTM = null
+		where MBR_ID = #{MBR_ID}
+	</update>
+</mapper>

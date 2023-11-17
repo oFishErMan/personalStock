@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace='com.pentas.mb.mj.MBMJ0100P01'>
+
+	<select id='selectTC' parameterType="pentasMap" resultType="pentasMap">
+	/* com.pentas.mb.mj.MBMJ0100P02.selectTC */
+	<![CDATA[
+		SELECT tnc_cont
+		  FROM pstc0001
+		 WHERE tnc_typ_cd = #{type}
+		   AND tnc_sttus_cd = 'SHOW'
+		   AND apply_dt <= TO_CHAR(SYSDATE(), 'YYYYMMDD')
+		 LIMIT 1
+	]]>
+	</select>
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace='com.pentas.mb.pc.MBPC0100'>
+
+	<select id='selectCurrentPassword' parameterType="pentasMap" resultType="pentasMap">
+	/* mb.pc.selectCurrentPassword */
+		select LOGIN_PW
+		from psmb0001
+		where MBR_ID = #{MBR_ID};
+	</select>
+
+	<update id='updatePassword' parameterType="pentasMap">
+	/* mb.pc.updatePassword */
+		update psmb0001 
+		set LOGIN_PW = #{newPassword}
+		, UPD_DTM = TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+		, UPD_ID = #{MBR_ID} 
+		where MBR_ID = #{MBR_ID};
+	</update>
+  
+</mapper>

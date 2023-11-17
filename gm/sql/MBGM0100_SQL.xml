@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace='com.pentas.mb.gm.MBGM0100'>
+
+    <select id="selectGonggiList" parameterType="pentasMap" resultType="pentasMap">
+        /* mb.gm.selectGonggiList */
+        select
+            GRP_ID ,
+            ORD_NO ,
+            GRP_NM ,
+            GRP_CLR,
+            GRP_FRM,
+            (SELECT count(*) FROM psmy0001 b WHERE a.grp_id = b.grp_id) PIECE_CNT
+        from PSGR0001 a
+        where MBR_ID = #{mbrId}
+        order by ORD_NO asc
+    </select>
+	
+	<select id="selectPiecesCount" parameterType="pentasMap" resultType="pentasMap">
+		/* mb.gm.selectPiecesCount */
+		select 
+			a.GRP_ID
+			,count(b.MYNTE_ID) as count
+		from psgr0001 a
+		left outer join psmy0001 b
+		on a.GRP_ID = b.GRP_ID
+		where a.mbr_id = #{mbrId}
+		group by a.GRP_ID
+		order by ORD_NO asc
+	</select>
+	
+	<select id="selectPieceList" parameterType="pentasMap" resultType="pentasMap">
+	/* mb.gm.selectPieceList */
+		select b.NTE_ID
+			   , b.NTECR_ID
+			   , b.NTE_NM
+			   , b.NTE_IMG
+			   , a.MYNTE_ID
+			   , a.GRP_ID
+			   , a.MBR_ID
+			   , a.FAV_YN
+			   , a.SUB_YN
+			   , a.MBR_PERM
+			   , (select count(*)
+					from psbk0001 c
+				   where (c.BCKR_ID = b.NTECR_ID and c.BCK_TGT_ID = #{mbrId})
+				      OR (c.BCKR_ID = #{mbrId} and c.BCK_TGT_ID = b.NTECR_ID)) as BLOCK
+			   , b.NTE_DEL_STTUS_CD
+			   , b.NTE_OPEN_TYP_CD
+			   , case when b.NTE_DEL_STTUS_CD = 'ERASE' then 0  									    /* 삭제된 피스면 0 (구독피스만 해당됨, 내노트가 삭제되면 row 가 없음) */
+					  when (select count(*)
+							  from psbk0001 c
+							 where (c.BCKR_ID = b.NTECR_ID and c.BCK_TGT_ID = #{mbrId})
+							    or (c.BCKR_ID = #{mbrId} and c.BCK_TGT_ID = b.NTECR_ID)) > 0 then 1     /* 차단하거나 차단당했으면 1 */
+			   		  when b.NTE_DEL_STTUS_CD = 'BLIND' and a.MBR_PERM = 'READ' then 2					/* 블라인드 처리되었으면 2, READ 권한의 구독피스만 해당 */
+					  when b.NTE_OPEN_TYP_CD = 'PRIVATE' and a.MBR_PERM = 'READ' then 3                 /* 비공개 피스이면 3, READ 권한의 구독 피스만 해당 */
+					  when b.NTECR_ID = #{mbrId} and a.FAV_YN = 'Y' then 8								/* 내노트인데 즐겨찾기했으면 8 */
+					  when b.NTECR_ID != #{mbrId} and a.FAV_YN = 'Y' then 7								/* 남노트인데 즐겨찾기했으면 7 */
+					  when b.NTECR_ID = #{mbrId} then 6													/* 내노트 6 */
+					  when (b.NTECR_ID != #{mbrId} or a.MBR_PERM = 'WRITE') then 5						/* 남노트인데 WRITE 권한의 피스면 5 */
+					  when (b.NTECR_ID != #{mbrId} or a.MBR_PERM = 'READ') then 4						/* 남노트인데 READ 권한 4 */
+					  end as ORDER_NUM
+			   , b.NTE_DEL_STTUS_CD
+		  from psmy0001 a,
+			   psnt0001 b
+		 where a.mbr_id = #{mbrId}
+		   and a.NTE_ID = b.NTE_ID
+		<if test='sortPiece != "ALL"'>
+		   and a.GRP_ID = #{sortPiece}
+		</if>
+		<!-- AND b.NTECR_ID NOT IN (SELECT BCKR_ID FROM psbk0001 WHERE BCK_TGT_ID = #{mbrId}) -->
+		<!-- AND b.NTE_ID NOT IN (SELECT NTE_ID from psnt0001 where NTECR_ID != #{mbrId} and NTE_OPEN_TYP_CD = 'PRIVATE') -->
+	  order by ORDER_NUM desc, b.NTE_NM ASC
+	</select>
+	
+	<update id="updateGonggiOrdNo" parameterType="pentasMap">
+	/* mb.gm.updateGonggiOrdNo */
+		UPDATE psgr0001 a
+		  JOIN (<foreach collection="gonggi" item="gonggi" separator="union all" index="index">
+					SELECT #{gonggi.GRP_ID} id, #{gonggi.ORD_NO} newOrdNo
+				</foreach>
+			   ) b ON a.grp_id = b.Id
+		   SET ord_no = newOrdNo
+			   , upd_dtm = DATE_FORMAT(SYSDATE(), '%Y%m%d%H%i%s')
+			   , upd_id = #{mbrId}
+	</update>
+	
+	<update id="updateGonggiDetail" parameterType="pentasMap">
+	/* mb.gm.updateGonggiDetail */
+			update psgr0001 a
+			set UPD_DTM = DATE_FORMAT(SYSDATE(), '%Y%m%d%H%i%s'),
+            UPD_ID = #{mbrId},
+            GRP_NM = #{GRP_NM},
+            GRP_CLR = #{GRP_CLR},
+            GRP_FRM = #{GRP_FRM}
+            where GRP_ID = #{GRP_ID}
+	</update>
+	
+	<update id="setFavPiece" parameterType="pentasMap">
+	/* mb.gm.setFavPiece */
+		update psmy0001 a
+			set UPD_DTM = DATE_FORMAT(SYSDATE(), '%Y%m%d%H%i%s'),
+            UPD_ID = #{mbrId},
+            FAV_YN = #{FAV_YN}
+            where MYNTE_ID = #{MYNTE_ID}
+	</update>
+	
+	<update id="updatePieceGonggi" parameterType="pentasMap">
+	/* mb.gm.updatePieceGonggi */
+		update psmy0001 a
+			set UPD_DTM = DATE_FORMAT(SYSDATE(), '%Y%m%d%H%i%s'),
+            UPD_ID = #{mbrId},
+            GRP_ID = #{GRP_ID}
+            where MYNTE_ID = #{MYNTE_ID}
+	</update>
+	
+	<update id="updateMyPieceDelete" parameterType="pentasMap">
+	/* mb.gm.updateMyPieceDelete */
+		update psnt0001
+			set UPD_DTM = DATE_FORMAT(SYSDATE(), '%Y%m%d%H%i%s'),
+            UPD_ID = #{mbrId},
+            NTE_DEL_STTUS_CD = 'ERASE'
+            where NTE_ID = #{NTE_ID}
+	</update>
+	
+    <delete id="deleteGonggi" parameterType="pentasMap">
+    /* mb.gm.deleteGonggi */
+        delete from PSGR0001
+        where GRP_ID = #{GRP_ID}
+    </delete>
+    
+    <delete id="deletePiece" parameterType="pentasMap">
+    /* mb.gm.deletePiece */
+        delete from psmy0001
+        where MYNTE_ID = #{MYNTE_ID}
+    </delete>
+    
+    <insert id="backupPiece" parameterType="pentasMap">
+		/* mb.gm.backupPiece*/
+		INSERT INTO psmy1001 (
+			MYNTE_ID
+			, NTE_ID
+			, GRP_ID
+			, MBR_ID
+			, FAV_YN
+			, SUB_YN
+			, REG_DTM
+			, REG_ID
+			, UPD_DTM
+			, UPD_ID
+		) SELECT 
+			MYNTE_ID
+			, NTE_ID
+			, GRP_ID
+			, MBR_ID
+			, FAV_YN
+			, SUB_YN
+			, REG_DTM
+			, REG_ID 
+			, TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+			, #{mbrId}
+		FROM psmy0001
+		WHERE 1=1
+			AND MYNTE_ID = #{MYNTE_ID}
+	</insert>
+    
+   	<update id="updateSubCnt" parameterType="pentasMap">
+		/* com.pentas.mb.gm.MBGM0100.updateSubCnt */
+		UPDATE pssn0001 AS t1
+		INNER JOIN (SELECT SUB_CNT FROM pssn0001 WHERE NTE_ID = #{NTE_ID}) AS t2
+		SET 
+			t1.SUB_CNT = CAST((CAST(t2.SUB_CNT AS INTEGER) - 1) AS CHAR),
+			t1.UPD_DTM = TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS'), 
+			t1.UPD_ID = #{mbrId}
+		WHERE t1.NTE_ID = #{NTE_ID}
+	</update>
+	
+    
+</mapper>

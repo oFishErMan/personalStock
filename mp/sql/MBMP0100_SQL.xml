@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace='com.pentas.mb.mp.MBMP0100'>
+	
+	<select id="selecTargetNick" parameterType="pentasMap" resultType="pentasMap">
+		/* mb.mp.selecTargetNick */
+		SELECT
+			NICKNM
+		FROM
+			PSMB0001
+		WHERE mbr_id = #{tgtId}		
+	</select>
+	
+	<select id="selectPieceList" parameterType="pentasMap" resultType="pentasMap">
+		/* mb.mp.selectPieceList */
+        select
+        	n.NTE_ID ,
+            n.NTE_NM ,
+            n.NTE_DESC ,
+            n.NTE_IMG ,
+            n.NTE_CAT_CD ,
+            s.LIKE_CNT ,
+            s.READ_CNT ,
+            s.SUB_CNT ,
+            s.REPLY_CNT ,
+            (select NICKNM from psmb0001 m where n.NTECR_ID = m.MBR_ID) as NICKNM,
+            (select c.SUB_CAT_NM from pscc0002 c where n.NTE_CAT_CD = c.SUB_CAT_CD and c.MAIN_CAT_ID = 'CCD-0100') as SUB_CAT_NM,
+            m.PF_IMG ,
+            m.DEF_IMG
+        from PSNT0001 n
+            inner join PSSN0001 s
+                on n.NTE_ID = s.NTE_ID
+            inner join PSMB0001 m
+            	on n.NTECR_ID = m.MBR_ID
+        <where>
+        	and n.NTECR_ID = #{tgtId}
+        	and n.NTE_OPEN_TYP_CD != 'PRIVATE' 
+            and (n.NTE_DEL_STTUS_CD not in ('ERASE', 'BLIND', 'REPORT') or n.NTE_DEL_STTUS_CD is null)
+        </where>
+        	order by CAST(s.LIKE_CNT as DECIMAL(12, 0)) desc, n.REG_DTM desc, n.NTE_NM
+    </select>
+</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace='com.pentas.mb.gm.MBGM0100P01'>
+
+	<select id="selectIsNtecr" parameterType="pentasMap" resultType="pentasMap">
+		/* com.pentas.mb.nd.MBND0100P02.selectIsNtecr */
+		SELECT 
+			CASE (NTECR_ID = #{mbrId})
+				WHEN TRUE THEN 'Y' ELSE 'N' END AS IS_NTECR
+		FROM psnt0001
+		WHERE 1=1 
+			AND NTE_ID = #{nteId}
+	</select>
+	
+	<select id="selectUserGrp" parameterType="pentasMap" resultType="pentasMap">
+		/* com.pentas.mb.nd.MBND0100P02.selectUserGrp */
+		SELECT 
+			GRP_ID
+			, GRP_NM
+<!-- 			, FAV_YN  -->
+		FROM psgr0001 
+		WHERE 1=1
+			AND MBR_ID = #{mbrId}
+		ORDER BY 
+<!-- 			FAV_YN DESC -->
+			ORD_NO ASC
+	</select>
+	
+	<select id="selectNteInfo" parameterType="pentasMap" resultType="pentasMap">
+		/* com.pentas.mb.nd.MBND0100P02.selectNteInfo */
+		SELECT 
+			a.NTE_ID
+			, a.NTE_NM
+			, a.NTE_CAT_CD
+			, (SELECT n.SUB_CAT_NM 
+				FROM pscc0002 n 
+				WHERE n.MAIN_CAT_ID = 'CCD-0100' 
+					AND n.SUB_CAT_CD = a.NTE_CAT_CD
+				) NTE_CAT_NM
+			, a.NTE_SORT_TYP_CD<!-- 피스유형 추가 -->
+			, a.NTE_DESC
+			, a.NTE_IMG
+			, b.GRP_ID
+			, C.GRP_NM
+		FROM psnt0001 a
+			LEFT JOIN (psmy0001 b, psgr0001 c)
+			ON (b.NTE_ID = a.NTE_ID AND c.GRP_ID = b.GRP_ID)
+		WHERE 1=1 
+			AND a.NTE_ID = #{nteId}
+			AND a.NTECR_ID = #{mbrId}
+			AND b.MBR_ID = #{mbrId}
+	</select>
+	
+	<update id="updateNteMaster" parameterType="pentasMap">
+		/* com.pentas.mb.nd.MBND0100P02.updateNteMaster */
+		UPDATE psnt0001
+		SET 
+			NTE_NM = #{nteNm}
+			, NTE_CAT_CD = #{nteCatCd}
+			, NTE_DESC = #{nteDesc}
+			, NTE_IMG = #{nteImg}
+			, UPD_DTM = TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+			, UPD_ID = #{mbrId}
+		WHERE 1=1 
+			AND NTE_ID = #{nteId}
+			AND NTECR_ID = #{mbrId}
+	</update>
+		
+	<update id="updateMyNte" parameterType="pentasMap">
+		/* com.pentas.mb.nd.MBND0100P02.updateMyNte */
+		UPDATE psmy0001
+		SET 
+			GRP_ID = #{grpId}
+			, UPD_DTM = TO_CHAR(SYSDATE(), 'YYYYMMDDHH24MISS')
+			, UPD_ID = #{mbrId}
+		WHERE 1=1 
+			AND NTE_ID = #{nteId}
+			AND MBR_ID = #{mbrId}
+			AND SUB_YN = 'N'
+	</update>
+	
+</mapper>

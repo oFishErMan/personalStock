@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace='com.pentas.mb.on.MBON0100'>
+
+	<select id="selectCategory" resultType="pentasMap">
+        /* mb.on.selectCategory */
+        select
+            SUB_CAT_CD,
+            SUB_CAT_NM
+        from PSCC0002
+        <where>
+            and MAIN_CAT_ID = 'CCD-0100'
+        </where>
+        order by CAST(ORD_NO AS UNSIGNED INTEGER) ASC
+    </select>
+
+	<select id="selectPieceList" parameterType="pentasMap" resultType="pentasMap">
+        /* mb.on.selectPieceList */
+        select
+        	n.NTE_ID ,
+            n.NTE_NM ,
+            n.NTE_DESC ,
+            n.NTE_IMG ,
+            n.NTE_CAT_CD ,
+            s.LIKE_CNT ,
+            s.READ_CNT ,
+            s.SUB_CNT ,
+            s.REPLY_CNT ,
+            (select NICKNM from psmb0001 m where n.NTECR_ID = m.MBR_ID) as NICKNM,
+            (select c.SUB_CAT_NM from pscc0002 c where n.NTE_CAT_CD = c.SUB_CAT_CD and c.MAIN_CAT_ID = 'CCD-0100') as SUB_CAT_NM,
+            m.PF_IMG ,
+            m.DEF_IMG ,
+            ((CAST(s.LIKE_CNT as DECIMAL(12, 0))*1.5)+(CAST(s.READ_CNT as DECIMAL(12, 0))*0.2)+(CAST(s.SUB_CNT as DECIMAL(12, 0))*1.5)+CAST(s.REPLY_CNT as DECIMAL(12, 0))) as SORT
+        from PSNT0001 n
+            inner join PSSN0001 s
+                on n.NTE_ID = s.NTE_ID
+            inner join PSMB0001 m
+            	on n.NTECR_ID = m.MBR_ID
+        <where>
+        	and n.NTECR_ID not in (select b.BCKR_ID from psbk0001 b where b.BCK_TGT_ID = #{mbrId})
+        	and n.NTECR_ID not in (select b.BCK_TGT_ID from psbk0001 b where b.BCKR_ID = #{mbrId})
+        	and n.NTE_OPEN_TYP_CD != 'PRIVATE' 
+            and (n.NTE_DEL_STTUS_CD not in ('ERASE', 'BLIND', 'REPORT') or n.NTE_DEL_STTUS_CD is null)
+            <if test='catCd != "ALL"'>
+                and n.NTE_CAT_CD = #{catCd}
+            </if>
+            <if test='noteSearchLabel == "피스제목"'>
+            	<if test="search != ''">
+	            	and n.NTE_NM like CONCAT('%', #{search}, '%')
+            	</if>
+            </if>
+            <if test='noteSearchLabel == "닉네임"'>
+            	and (select NICKNM from psmb0001 m where n.NTECR_ID = m.MBR_ID) like CONCAT('%', #{search}, '%')
+            </if>
+        </where>
+        <choose>
+        	<when test='sort == "RCMD"'>
+	          	order by ((CAST(s.LIKE_CNT as DECIMAL(12, 0))*1.5)+(CAST(s.READ_CNT as DECIMAL(12, 0))*0.2)+(CAST(s.SUB_CNT as DECIMAL(12, 0))*1.5)+CAST(s.REPLY_CNT as DECIMAL(12, 0))) desc, n.REG_DTM desc, n.NTE_NM
+	        </when>
+	        <when test='sort == "LIKE"'>
+	          	order by CAST(s.LIKE_CNT as DECIMAL(12, 0)) desc, n.REG_DTM desc, n.NTE_NM
+	        </when>
+	        <when test='sort == "VIEW"'>
+	          	order by CAST(s.READ_CNT as DECIMAL(12, 0)) desc, n.REG_DTM desc, n.NTE_NM
+	        </when>
+	        <when test='sort == "SUB"'>
+	          	order by CAST(s.SUB_CNT as DECIMAL(12, 0)) desc, n.REG_DTM desc, n.NTE_NM
+	        </when>
+	        <when test='sort == "CMT"'>
+	          	order by CAST(s.REPLY_CNT as DECIMAL(12, 0)) desc, n.REG_DTM desc, n.NTE_NM
+	        </when>
+	        <when test='sort == "NAME"'>
+	          	order by n.NTE_NM, n.REG_DTM, n.NTE_NM
+	        </when>
+	        <when test='sort == "NICK"'>
+	          	order by NICKNM, n.REG_DTM, n.NTE_NM
+	        </when> 
+	        <otherwise>
+	        	order by CAST(s.LIKE_CNT as DECIMAL(12, 0)) desc, n.REG_DTM desc, n.NTE_NM
+	        </otherwise>
+        </choose>
+    </select>
+  
+</mapper>

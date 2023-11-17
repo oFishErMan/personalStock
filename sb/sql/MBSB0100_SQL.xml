@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace='com.pentas.mb.sb.MBSB0100'>
+
+	<select id='selectBlockList' parameterType="pentasMap" resultType="pentasMap">
+	/* mb.sb.selectBlockList */
+		select b.NICKNM, b.PF_IMG, b.DEF_IMG, a.BCK_TGT_ID
+		from psbk0001 a, psmb0001 b 
+		where a.BCKR_ID = #{MBR_ID} and
+			a.BCK_TGT_ID = b.MBR_ID;
+	</select>
+
+	<delete id='deleteBlock' parameterType="pentasMap">
+	/* mb.sb.deleteBlock */
+		delete from psbk0001
+		where BCKR_ID = #{MBR_ID} and BCK_TGT_ID = #{BCK_TGT_ID};
+	</delete>
+  
+</mapper>
